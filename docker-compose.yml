@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: shadowpulse-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: shadowpulse-backend
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB_NAME: shadowpulse
+      SECRET_KEY: ${SECRET_KEY:-replace_with_a_long_random_string}
+      AGENT_API_KEY: ${AGENT_API_KEY:-CHANGE_ME_AGENT_SHARED_SECRET}
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+    volumes:
+      - ./backend/app/ml/model_store:/app/app/ml/model_store
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: shadowpulse-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_WS_URL: ws://localhost:8000
+    ports:
+      - "3000:80"
+
+volumes:
+  mongo_data:

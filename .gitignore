@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Env
+.env
+
+# ML artifacts (regenerated)
+backend/app/ml/model_store/*.joblib
+ml/synthetic_dataset.csv
+
+# OS
+.DS_Store
