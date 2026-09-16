@@ -32,6 +32,15 @@ class Settings(BaseSettings):
     MODEL_PATH: str = "app/ml/model_store/isolation_forest.joblib"
     SCALER_PATH: str = "app/ml/model_store/scaler.joblib"
 
+    # --- SMS Notification ---
+    SMS_ENABLED: bool = False
+    SMS_MODE: str = "mock"
+    SMS_PROVIDER: str = "twilio"
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    ALERT_PHONE_NUMBER: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -272,6 +272,11 @@ export default function AlertCenter({ agentId }) {
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> {new Date(a.created_at).toLocaleString()}</span>
                       <span>Source: {a.alert_type}</span>
                       <span>Score: <span style={{ color: sevColor }}>{a.threat_score ?? 0}%</span></span>
+                      {(a.severity === "High" || a.severity === "Critical") && (
+                        <span>
+                          SMS: <span style={{ color: a.sms_sent ? "var(--sev-low)" : "var(--sev-medium)" }}>{a.sms_status || "Not Sent"}</span>
+                        </span>
+                      )}
                     </div>
                     {a.suggestions && a.suggestions.length > 0 && (
                       <div style={{ marginTop: 12, padding: "8px 12px", background: "var(--surface-alt)", borderRadius: 4, borderLeft: "2px solid var(--pulse)" }}>

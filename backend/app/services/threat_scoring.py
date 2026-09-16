@@ -69,7 +69,37 @@ async def _raise_alert(db, agent_id: str, result, raw_context: dict, feature_vec
         "updated_at": datetime.now(timezone.utc),
         "resolved_at": None,
         "resolved_by": None,
+        "sms_sent": False,
+        "sms_status": "Not Sent",
+        "sms_sent_at": None,
     }
+
+    if result.severity in ["High", "Critical"]:
+        # Duplicate protection: don't send if there's already an open alert for this agent that sent an SMS recently.
+        recent_sms_alert = await db.alerts.find_one({
+            "agent_id": agent_id,
+            "status": "Open",
+            "sms_sent": True
+        })
+        
+        if recent_sms_alert:
+            alert_doc["sms_status"] = "Skipped (Duplicate)"
+        else:
+            from app.services.sms_service import send_alert_sms
+            import asyncio
+            
+            try:
+                sms_result = await asyncio.to_thread(send_alert_sms, alert_doc)
+                alert_doc["sms_sent"] = sms_result.get("sms_sent", False)
+                alert_doc["sms_status"] = sms_result.get("sms_status", "Failed")
+                if alert_doc["sms_sent"]:
+                    alert_doc["sms_sent_at"] = datetime.now(timezone.utc)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to call SMS service: {e}")
+                alert_doc["sms_sent"] = False
+                alert_doc["sms_status"] = "Failed (Exception)"
+
     await db.alerts.insert_one(alert_doc)
     return alert_doc
 
