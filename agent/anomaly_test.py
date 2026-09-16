@@ -19,9 +19,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import uuid
+
 BACKEND_URL = os.getenv("SHADOWPULSE_BACKEND_URL", "http://localhost:8000")
 AGENT_KEY = os.getenv("SHADOWPULSE_AGENT_KEY", "CHANGE_ME_AGENT_SHARED_SECRET")
-AGENT_ID = os.getenv("SHADOWPULSE_TEST_AGENT_ID", f"agent-test-{socket.gethostname().lower()}")
+# Match the active agent's ID so the dashboard (which is already connected to it) sees the anomaly
+AGENT_ID = os.getenv("SHADOWPULSE_AGENT_ID") or f"agent-{uuid.getnode():x}"
 HEADERS = {"X-Agent-Key": AGENT_KEY, "Content-Type": "application/json"}
 
 

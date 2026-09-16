@@ -26,6 +26,23 @@ export default function Dashboard({ agentId }) {
   const netOut = latest?.network?.bytes_sent ?? 0;
   const currentThreat = latest?.threat?.threat_score ?? summary?.current_threat_score ?? 14.2;
 
+  const totalRamGB = latest?.memory?.total_memory ? (latest.memory.total_memory / (1024 ** 3)).toFixed(1) : 16;
+  const usedRamGB = latest?.memory?.used_memory ? (latest.memory.used_memory / (1024 ** 3)).toFixed(1) : 6.74;
+  const cpuCores = latest?.cpu?.cores ?? 8;
+
+  const getDynamicBreakdown = () => {
+    const isContrib = (name) => latest?.threat?.contributing_features?.includes(name);
+    const procCount = latest?.processes?.length ?? summary?.process_count ?? 90;
+    const activeConns = latest?.network?.active_connections ?? 15;
+
+    return [
+      { name: "CPU Utilization", val: `${currentCpu.toFixed(1)}%`, norm: "< 40%", pct: Math.min(100, currentCpu), cont: isContrib("cpu_usage_percent") ? "High" : "Low", color: isContrib("cpu_usage_percent") ? "var(--sev-critical)" : "var(--pulse)" },
+      { name: "RAM Utilization", val: `${currentRam.toFixed(1)}%`, norm: "< 80%", pct: Math.min(100, currentRam), cont: isContrib("memory_used_percent") ? "High" : "Low", color: isContrib("memory_used_percent") ? "var(--sev-critical)" : "var(--pulse)" },
+      { name: "Process Count", val: `${procCount}`, norm: "< 150", pct: Math.min(100, (procCount / 150) * 100), cont: isContrib("process_count") ? "High" : "Low", color: isContrib("process_count") ? "var(--sev-critical)" : "var(--pulse)" },
+      { name: "Active Connections", val: `${activeConns}`, norm: "< 50", pct: Math.min(100, (activeConns / 50) * 100), cont: isContrib("active_connections") ? "High" : "Low", color: isContrib("active_connections") ? "var(--sev-critical)" : "var(--pulse)" },
+    ];
+  };
+
   return (
     <Layout agentId={agentId} connected={connected} latest={latest} threatScore={currentThreat.toFixed(0)}>
       <div className="grid" style={{ gridTemplateColumns: "380px 1fr", gap: 16 }}>
@@ -65,9 +82,9 @@ export default function Dashboard({ agentId }) {
         {/* RIGHT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="grid grid-3" style={{ gap: 16 }}>
-            <MetricCard label="CPU USAGE" value={currentCpu.toFixed(1)} unit="%" sub="8 Cores Active" />
-            <MetricCard label="RAM USAGE" value={currentRam.toFixed(1)} unit="%" sub="6.74 GB / 16 GB" />
-            <MetricCard label="DISK STORAGE" value={(summary?.disk_used_percent ?? 0).toFixed(1)} unit="%" sub="Latest disk snapshot" valueColor="var(--sev-low)" />
+            <MetricCard label="CPU USAGE" value={currentCpu.toFixed(1)} unit="%" sub={`${cpuCores} Cores Active`} />
+            <MetricCard label="RAM USAGE" value={currentRam.toFixed(1)} unit="%" sub={`${usedRamGB} GB / ${totalRamGB} GB`} />
+            <MetricCard label="DISK USAGE" value={(latest?.disk?.[0]?.active_percent ?? summary?.disk_used_percent ?? 0).toFixed(1)} unit="%" sub="Time active processing I/O" valueColor="var(--sev-low)" />
             <MetricCard label="NET BANDWIDTH" value={((netIn+netOut)/1024).toFixed(1)} unit=" KB/s" sub={`${latest?.network?.active_connections ?? 0} Active Sockets`} valueColor="var(--pulse)" />
             <MetricCard label="PROCESSES" value={summary?.process_count ?? 0} sub="Stored process events" subLink="Inspect Process Trees →" />
             <MetricCard label="OPEN INCIDENTS" value={summary?.open_alerts ?? 0} sub="Requires Investigation" subLink="Open Alert Center →" valueColor="var(--sev-critical)" />
@@ -100,12 +117,7 @@ export default function Dashboard({ agentId }) {
            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 16 }}>Top behavioral deviations driving the Isolation Forest model:</div>
            
            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-             {[
-               { name: "CPU Utilization", val: "18.4%", norm: "5-35%", pct: 85, cont: "12%", color: "var(--pulse)" },
-               { name: "Process Creation Rate", val: "2/min", norm: "1-5/min", pct: 60, cont: "8%", color: "var(--pulse)" },
-               { name: "Outbound Network Entropy", val: "0.38", norm: "0.2-0.6", pct: 40, cont: "16%", color: "var(--pulse)" },
-               { name: "File System I/O Burst", val: "0.8MB/s", norm: "0-5MB/s", pct: 20, cont: "5%", color: "var(--pulse)" },
-             ].map((f, i) => (
+             {getDynamicBreakdown().map((f, i) => (
                 <div key={i}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
                     <span>{f.name}</span>

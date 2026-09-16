@@ -47,60 +47,53 @@ for r in (health, auth, ingest, summary, metrics, processes, network, alerts, an
 # ---------------------------------------------------------------------------
 # WebSocket: real-time push channel (FR14/ Module 7 "Real-time Updates")
 # ---------------------------------------------------------------------------
-class ConnectionManager:
-    def __init__(self):
-        self.active: dict[str, list[WebSocket]] = {}
-
-    async def connect(self, agent_id: str, ws: WebSocket):
-        await ws.accept()
-        self.active.setdefault(agent_id, []).append(ws)
-
-    def disconnect(self, agent_id: str, ws: WebSocket):
-        if agent_id in self.active and ws in self.active[agent_id]:
-            self.active[agent_id].remove(ws)
-
-    async def broadcast(self, agent_id: str, message: dict):
-        for ws in list(self.active.get(agent_id, [])):
-            try:
-                await ws.send_text(json.dumps(message, default=str))
-            except Exception:
-                self.disconnect(agent_id, ws)
-
-
-manager = ConnectionManager()
-
+from app.websocket_manager import manager
 
 @app.websocket("/ws/{agent_id}")
 async def websocket_endpoint(websocket: WebSocket, agent_id: str):
-    """Dashboard connects here; receives a snapshot every ~3s so charts and
-    the threat gauge update live without polling."""
+    """Dashboard connects here; receives a snapshot on connect, then gets updates from ingest.py."""
     await manager.connect(agent_id, websocket)
     db = get_db()
     try:
-        while True:
-            latest_cpu = await db.cpu_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
-            latest_mem = await db.memory_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
-            latest_net = await db.network_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
-            latest_score = await db.anomaly_scores.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
-            latest_process = await db.process_events.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
-            processes = []
-            if latest_process:
-                async for process in db.process_events.find(
-                    {"agent_id": agent_id, "timestamp": latest_process["timestamp"]},
-                    {"_id": 0},
-                ).sort("cpu_percent", -1).limit(1000):
-                    processes.append(process)
-            open_alerts = await db.alerts.count_documents({"agent_id": agent_id, "status": "Open"})
+        # Send initial state immediately
+        latest_cpu = await db.cpu_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        latest_mem = await db.memory_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        latest_net = await db.network_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        latest_score = await db.anomaly_scores.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        latest_process = await db.process_events.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        latest_disk_event = await db.disk_metrics.find_one({"agent_id": agent_id}, {"_id": 0}, sort=[("timestamp", -1)])
+        
+        processes = []
+        if latest_process:
+            async for process in db.process_events.find(
+                {"agent_id": agent_id, "timestamp": latest_process["timestamp"]},
+                {"_id": 0},
+            ).sort("cpu_percent", -1).limit(1000):
+                processes.append(process)
 
-            await websocket.send_text(json.dumps({
-                "cpu": latest_cpu,
-                "memory": latest_mem,
-                "network": latest_net,
-                "threat": latest_score,
-                "processes": processes,
-                "open_alerts": open_alerts,
-            }, default=str))
-            await asyncio.sleep(3)
+        disks = []
+        if latest_disk_event:
+            async for disk in db.disk_metrics.find(
+                {"agent_id": agent_id, "timestamp": latest_disk_event["timestamp"]},
+                {"_id": 0},
+            ):
+                disks.append(disk)
+
+        open_alerts = await db.alerts.count_documents({"agent_id": agent_id, "status": "Open"})
+
+        await websocket.send_text(json.dumps({
+            "cpu": latest_cpu,
+            "memory": latest_mem,
+            "network": latest_net,
+            "disk": disks,
+            "threat": latest_score,
+            "processes": processes,
+            "open_alerts": open_alerts,
+        }, default=str))
+
+        # Keep connection open and wait for incoming messages (e.g. ping)
+        while True:
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(agent_id, websocket)
 

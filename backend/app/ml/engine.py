@@ -87,13 +87,13 @@ class ThreatEngine:
         rng = np.random.default_rng(42)
         synthetic_normal = np.column_stack([
             rng.normal(20, 8, 2000).clip(0, 100),     # cpu
-            rng.normal(45, 10, 2000).clip(0, 100),    # memory
-            rng.normal(55, 12, 2000).clip(0, 100),    # disk
-            rng.normal(2_000_000, 800_000, 2000).clip(0),  # disk io
+            rng.normal(75, 10, 2000).clip(0, 100),    # memory (updated)
+            rng.normal(85, 12, 2000).clip(0, 100),    # disk (updated)
+            rng.normal(1_500_000, 800_000, 2000).clip(0),  # disk io
             rng.normal(500_000, 200_000, 2000).clip(0),    # net rate
-            rng.normal(15, 6, 2000).clip(0),          # connections
-            rng.normal(90, 20, 2000).clip(0),         # process count
-            rng.normal(0.5, 0.4, 2000).clip(0),       # new process rate
+            rng.normal(280, 20, 2000).clip(0),        # connections (updated)
+            rng.normal(310, 20, 2000).clip(0),        # process count (updated)
+            rng.normal(1.5, 1.0, 2000).clip(0),       # new process rate (updated)
             rng.normal(3, 2, 2000).clip(0),           # file event rate
             rng.normal(1, 1, 2000).clip(0),           # system event rate
         ])
@@ -120,7 +120,7 @@ class ThreatEngine:
         is_anomaly = prediction == -1
 
         # Normalize raw score (~ -0.2..0.5 typical range) into 0-100 threat score.
-        threat_score = float(np.clip((raw + 0.2) / 0.7 * 100, 0, 100))
+        threat_score = float(np.clip((raw + 0.2) / 0.7 * 100, 0, 90))
 
         contributing = self._top_contributing_features(vector[0])
 

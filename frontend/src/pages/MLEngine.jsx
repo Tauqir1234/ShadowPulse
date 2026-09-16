@@ -156,7 +156,6 @@ export default function MLEngine({ agentId }) {
                  <ReferenceLine y={0} stroke="var(--pulse)" strokeDasharray="5 5" />
                  <Line type="monotone" dataKey="baseline" name="Learned baseline" stroke="var(--pulse)" strokeDasharray="5 5" dot={false} />
                  <Line type="monotone" dataKey="deviation" name="Live deviation (z-score)" stroke="var(--sev-critical)" strokeWidth={2} connectNulls dot={false} />
-                 <Line type="monotone" dataKey="threatScore" name="Threat score" stroke="var(--accent)" strokeWidth={2} connectNulls dot={false} />
                </LineChart></ResponsiveContainer> : <div className="empty-state">Waiting for model baseline</div>}
              </div>
            </div>

@@ -20,10 +20,20 @@ export default function FileIntegrity({ agentId }) {
 
     if (agentId) {
       fetchEvents();
-      const interval = setInterval(fetchEvents, 5000);
+      const interval = setInterval(fetchEvents, 8000);
       return () => clearInterval(interval);
     }
   }, [agentId]);
+
+  useEffect(() => {
+    if (latest?.file_events?.length > 0) {
+      setEvents((prev) => {
+        // Prepend new live events, keep max 100
+        const combined = [...latest.file_events, ...prev];
+        return combined.slice(0, 100);
+      });
+    }
+  }, [latest]);
 
   const eventCounts = events.reduce((counts, event) => {
     counts[event.event_type] = (counts[event.event_type] || 0) + 1;
@@ -43,60 +53,7 @@ export default function FileIntegrity({ agentId }) {
           </div>
         </div>
 
-        <div className="grid grid-3" style={{ gridTemplateColumns: "350px 1fr 1fr", gap: 16, marginBottom: 20 }}>
-          {/* File Entropy Radar */}
-          <div className="card" style={{ display: "flex", flexDirection: "column", height: 260 }}>
-            <div className="card-title" style={{ textTransform: "uppercase", fontSize: 12, letterSpacing: "0.05em", marginBottom: 16 }}>File Entropy Radar</div>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-               {/* Simple mock radar chart using SVG */}
-               <svg width="120" height="120" viewBox="0 0 100 100">
-                  <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="none" stroke="var(--border)" strokeWidth="1"/>
-                  <polygon points="50,25 75,40 75,60 50,75 25,60 25,40" fill="none" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="50" y2="10" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="90" y2="30" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="90" y2="70" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="50" y2="90" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="10" y2="70" stroke="var(--border)" strokeWidth="1"/>
-                  <line x1="50" y1="50" x2="10" y2="30" stroke="var(--border)" strokeWidth="1"/>
-                  <polygon points="50,30 65,45 60,60 50,65 40,60 35,45" fill="rgba(45, 217, 208, 0.2)" stroke="var(--sev-low)" strokeWidth="2"/>
-               </svg>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, marginTop: 12 }}>
-               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--text-muted)" }}>
-                 <span>Avg File Entropy:</span> <span style={{ color: "var(--sev-low)", fontWeight: 600 }}>4.12 / 8.0 (Normal)</span>
-               </div>
-               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--text-muted)" }}>
-                 <span>Encryption Threshold:</span> <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>7.0 / 8.0</span>
-               </div>
-               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--text-muted)" }}>
-                 <span>Watchdog Status:</span> <span style={{ color: "var(--sev-low)", fontWeight: 600 }}>ACTIVE</span>
-               </div>
-            </div>
-          </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-             <MetricCard label="TOTAL EVENTS" value={events.length.toString()} sub="Create, modify, delete, rename" />
-             <div className="card" style={{ flex: 1 }}>
-               <div className="card-title" style={{ textTransform: "uppercase", fontSize: 10, letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: 12 }}>Live File Activity</div>
-               <div style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                   {["created", "modified", "deleted", "renamed"].map((type) => <span key={type}>{type}: <strong>{eventCounts[type] || 0}</strong></span>)}
-                 </div>
-                 <div style={{ marginTop: 8, color: "var(--text-muted)" }}>All accessible mounted drives are monitored recursively.</div>
-               </div>
-             </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-             <MetricCard label="CRITICAL EVENTS" value="0" valueColor="var(--sev-critical)" />
-             <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-               <div className="card-title" style={{ textTransform: "uppercase", fontSize: 10, letterSpacing: "0.05em", color: "var(--text-muted)" }}>Monitored Dirs</div>
-               <div style={{ flex: 1, display: "flex", alignItems: "center", fontSize: 32, fontWeight: 700, fontFamily: "var(--font-display)" }}>
-                 ALL
-               </div>
-             </div>
-          </div>
-        </div>
 
         <div className="card">
            <div className="card-header" style={{ marginBottom: 16 }}>

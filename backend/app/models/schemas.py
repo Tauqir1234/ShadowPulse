@@ -58,6 +58,7 @@ class DiskMetric(BaseModel):
     used_space: int
     free_space: int
     used_percent: float
+    active_percent: Optional[float] = 0
     read_bytes: Optional[int] = 0
     write_bytes: Optional[int] = 0
     disk_temperature: Optional[float] = None
@@ -82,6 +83,7 @@ class ProcessEvent(BaseModel):
     cpu_percent: Optional[float] = 0
     memory_percent: Optional[float] = 0
     memory_mb: Optional[float] = 0
+    disk_io: Optional[float] = 0
     threads: Optional[int] = 0
     status: Optional[str] = "running"
     event_type: str = "running"  # created | terminated | running

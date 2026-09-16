@@ -30,6 +30,7 @@ export const api = {
   alerts: (agentId, status) => client.get("/api/alerts", { params: { agent_id: agentId, status } }),
   ackAlert: (alertId, status, resolvedBy) =>
     client.put("/api/alerts/ack", { alert_id: alertId, status, resolved_by: resolvedBy }),
+  clearAlerts: (agentId) => client.delete("/api/alerts", { params: { agent_id: agentId } }),
   anomalies: (agentId) => client.get("/api/anomalies", { params: { agent_id: agentId } }),
   modelBaseline: () => client.get("/api/anomalies/baseline"),
   mlDiagnostics: () => client.get("/api/ml/diagnostics"),

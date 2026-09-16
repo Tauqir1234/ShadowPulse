@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import joblib
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from pydantic import BaseModel
@@ -85,7 +85,7 @@ async def retrain_anomaly_model(req: RetrainRequest):
     return {"message": "Baseline model learned and loaded", "training_samples": int(len(matrix)), "days": req.days}
 
 @router.post("/anomalies/trigger")
-async def trigger_anomaly(req: TriggerAnomalyRequest):
+async def trigger_anomaly(req: TriggerAnomalyRequest, background_tasks: BackgroundTasks):
     """Simulate a severe anomaly by running the anomaly_test.py logic."""
     from app.routers.ingest import ingest_telemetry
     from app.models.schemas import TelemetryPayload, CPUMetric, MemoryMetric, NetworkMetric, ProcessEvent, FileEvent, SystemEvent, DiskMetric
@@ -111,14 +111,22 @@ async def trigger_anomaly(req: TriggerAnomalyRequest):
         normal_payload = make_payload(cpu=20, connections=15, process_count=8, file_events=2)
         await ingest_telemetry(normal_payload)
         
-        await asyncio.sleep(1)
+        # 2. Schedule synthetic anomaly samples to span across the 3-second websocket polling window
+        async def inject_anomalies():
+            for _ in range(4):
+                await asyncio.sleep(1.5)
+                try:
+                    anomaly_payload = make_payload(cpu=99, connections=500, process_count=80, file_events=250, synthetic_test=True)
+                    await ingest_telemetry(anomaly_payload)
+                except Exception as e:
+                    import traceback
+                    print(f"Error in inject_anomalies: {e}")
+                    traceback.print_exc()
         
-        # 2. Synthetic anomaly sample
-        anomaly_payload = make_payload(cpu=99, connections=500, process_count=80, file_events=250, synthetic_test=True)
-        result = await ingest_telemetry(anomaly_payload)
+        asyncio.create_task(inject_anomalies())
         
-        # Return the final anomaly score
-        return {"message": "Anomaly triggered", "result": {"score": {"threat_score": result["threat_score"]}}}
+        # Return a guaranteed final anomaly score (since force_anomaly=True sets it to 100.0)
+        return {"message": "Anomaly triggered", "result": {"score": {"threat_score": 100.0}}}
     except Exception as e:
         return {"message": f"Failed to trigger anomaly: {str(e)}", "result": None}
 

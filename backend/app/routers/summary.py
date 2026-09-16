@@ -36,8 +36,11 @@ async def get_summary(agent_id: str = Query(...)):
         db.file_events.count_documents({"agent_id": agent_id}),
         db.system_events.count_documents({"agent_id": agent_id}),
     ))
-    process_count = await db.process_events.count_documents({"agent_id": agent_id})
-
+    latest_ts_doc = await db.process_events.find_one({"agent_id": agent_id}, sort=[("timestamp", -1)])
+    if latest_ts_doc:
+        process_count = await db.process_events.count_documents({"agent_id": agent_id, "timestamp": latest_ts_doc["timestamp"]})
+    else:
+        process_count = 0
     return {
         "agent": agent,
         "system_health": "critical" if open_alerts > 0 and latest_score and latest_score["threat_score"] >= 91

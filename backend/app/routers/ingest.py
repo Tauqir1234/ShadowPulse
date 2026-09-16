@@ -85,6 +85,20 @@ async def ingest_telemetry(payload: TelemetryPayload, _=Depends(verify_agent_key
         force_anomaly=payload.synthetic_test,
     )
 
+    open_alerts = await db.alerts.count_documents({"agent_id": agent_id, "status": "Open"})
+    
+    from app.websocket_manager import manager
+    await manager.broadcast(agent_id, {
+        "cpu": {"timestamp": ts, **payload.cpu.model_dump()} if payload.cpu else None,
+        "memory": {"timestamp": ts, **payload.memory.model_dump()} if payload.memory else None,
+        "network": {"timestamp": ts, **payload.network.model_dump()} if payload.network else None,
+        "disk": [{"timestamp": ts, **d.model_dump()} for d in payload.disks],
+        "threat": result["score"],
+        "processes": [{"timestamp": ts, **p.model_dump()} for p in payload.processes],
+        "open_alerts": open_alerts,
+        "timestamp": ts,
+    })
+
     return {
         "message": "Telemetry stored",
         "threat_score": result["score"]["threat_score"],

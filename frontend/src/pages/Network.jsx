@@ -20,6 +20,7 @@ export default function Network({ agentId }) {
   const sentSeries = points.map((p) => ({ t: new Date(p.timestamp).getTime(), value: p.bytes_sent / 1024 }));
   const recvSeries = points.map((p) => ({ t: new Date(p.timestamp).getTime(), value: p.bytes_received / 1024 }));
   const connSeries = points.map((p) => ({ t: new Date(p.timestamp).getTime(), value: p.active_connections }));
+  const mbpsSeries = points.map((p) => ({ t: new Date(p.timestamp).getTime(), value: ((p.bytes_sent + p.bytes_received) * 8) / 1000000 }));
 
   return (
     <Layout agentId={agentId} connected={connected} latest={latest} threatScore={latest?.threat?.threat_score?.toFixed(0) ?? 0}>
@@ -57,10 +58,10 @@ export default function Network({ agentId }) {
            <div className="card-header">
              <div className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--pulse)" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                ACTIVE CONNECTIONS COUNT
+                REAL-TIME THROUGHPUT
              </div>
            </div>
-           <LineChartCard title="Open Sockets" data={connSeries} dataKey="value" color="var(--chart-3)" unit="" height={220} />
+           <LineChartCard title="Total Bandwidth" data={mbpsSeries} dataKey="value" color="var(--chart-3)" unit=" Mbps" height={220} />
         </div>
       </div>
     </Layout>

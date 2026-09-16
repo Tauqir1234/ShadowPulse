@@ -38,3 +38,11 @@ async def acknowledge_alert(payload: AlertAck):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"message": f"Alert {payload.alert_id} marked as {payload.status}"}
+
+
+@router.delete("/alerts")
+async def clear_alerts(agent_id: str = Query(...)):
+    """DELETE /api/alerts — permanently delete all alert history for an agent."""
+    db = get_db()
+    result = await db.alerts.delete_many({"agent_id": agent_id})
+    return {"message": f"Cleared {result.deleted_count} alert(s) for agent {agent_id}", "deleted": result.deleted_count}

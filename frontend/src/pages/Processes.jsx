@@ -29,8 +29,15 @@ export default function Processes({ agentId }) {
     }
   }, [latest]);
 
+  const sortedProcesses = [...processes].sort((a, b) => {
+    const nameA = (a.process_name || "").toLowerCase();
+    const nameB = (b.process_name || "").toLowerCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+    return (a.pid || 0) - (b.pid || 0);
+  });
   const newCount = processes.filter((p) => p.event_type === "created").length;
-  const topCpu = processes[0];
+  const topCpu = [...processes].sort((a, b) => (b.cpu_percent || 0) - (a.cpu_percent || 0))[0];
 
   return (
     <Layout agentId={agentId} connected={connected} latest={latest} threatScore={latest?.threat?.threat_score?.toFixed(0) ?? 0}>
@@ -58,7 +65,7 @@ export default function Processes({ agentId }) {
                 PROCESS TABLE ENTRIES
              </div>
            </div>
-           <ProcessTable processes={processes} />
+           <ProcessTable processes={sortedProcesses} />
         </div>
       </div>
     </Layout>

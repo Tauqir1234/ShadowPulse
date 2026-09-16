@@ -9,7 +9,6 @@ import FileIntegrity from "./pages/FileIntegrity";
 import AlertCenter from "./pages/AlertCenter";
 import History from "./pages/History";
 import Database from "./pages/Database";
-import Telemetry from "./pages/Telemetry";
 import MLEngine from "./pages/MLEngine";
 import { api } from "./lib/api";
 
@@ -37,10 +36,9 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (agentId) return;
     api.agents().then(({ data }) => {
       const activeAgent = data.agents?.[0]?.agent_id;
-      if (activeAgent) {
+      if (activeAgent && activeAgent !== agentId) {
         localStorage.setItem("shadowpulse_agent_id", activeAgent);
         setAgentId(activeAgent);
       }
@@ -53,7 +51,6 @@ export default function App() {
         <Route path="/login" element={<Login onLogin={refresh} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/" element={<RequireAuth token={token}><Dashboard agentId={agentId} /></RequireAuth>} />
-        <Route path="/telemetry" element={<RequireAuth token={token}><Telemetry agentId={agentId} /></RequireAuth>} />
         <Route path="/ml-engine" element={<RequireAuth token={token}><MLEngine agentId={agentId} /></RequireAuth>} />
         <Route path="/processes" element={<RequireAuth token={token}><Processes agentId={agentId} /></RequireAuth>} />
         <Route path="/network" element={<RequireAuth token={token}><Network agentId={agentId} /></RequireAuth>} />

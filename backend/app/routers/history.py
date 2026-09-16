@@ -21,7 +21,9 @@ async def get_metrics_history(
     query = {"agent_id": agent_id, "timestamp": {"$gte": since}}
 
     async def read(collection):
-        return await collection.find(query, {"_id": 0}).sort("timestamp", 1).to_list(length=limit)
+        items = await collection.find(query, {"_id": 0}).sort("timestamp", -1).to_list(length=limit)
+        items.reverse()
+        return items
 
     cpu, memory, network, threat = await asyncio.gather(
         read(db.cpu_metrics),

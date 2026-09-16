@@ -11,7 +11,6 @@ import {
 
 const NAV = [
   { to: "/", label: "SOC Overview", sub: "Real-time telemetry & threat gauge", icon: IconGrid, end: true },
-  { to: "/telemetry", label: "Telemetry & Metrics", sub: "CPU, RAM, Disk, Network streams", icon: IconPulse },
   { to: "/ml-engine", label: "AI / ML Engine", sub: "Anomaly detection & ...", icon: IconBrain, badge: "IsoForest" },
   { to: "/processes", label: "Process Sentinel", sub: "PID tracking & resource deviations", icon: IconCpu },
   { to: "/network", label: "Network Sentinel", sub: "Sockets, traffic & IP entropy", icon: IconNetwork },
@@ -126,18 +125,7 @@ export default function Layout({ children, agentId, connected, latest }) {
                   </div>
                </div>
             </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, padding: "6px 10px", background: "var(--surface-alt)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                <IconCpu width={14} height={14} color="var(--pulse)" /> CPU: <span style={{ fontWeight: 700 }}>{currentCpu.toFixed(1)}%</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, padding: "6px 10px", background: "var(--surface-alt)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                <IconGrid width={14} height={14} color="var(--accent)" /> RAM: <span style={{ fontWeight: 700 }}>{currentRam.toFixed(1)}%</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, padding: "6px 10px", background: "var(--surface-alt)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                <IconNetwork width={14} height={14} color="var(--sev-low)" /> NET: <span style={{ fontWeight: 700 }}>{currentNet} KB/s</span>
-              </div>
-            </div>
-          </div>
+           </div>
         )}
 
         <div className="content">

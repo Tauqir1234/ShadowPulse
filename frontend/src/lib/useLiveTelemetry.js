@@ -47,18 +47,18 @@ export function useLiveTelemetry(agentId, historyLength = 500) {
       ws.onmessage = (evt) => {
         try {
           const data = JSON.parse(evt.data);
-          const sourceTimestamp = data.threat?.timestamp || data.cpu?.timestamp || data.memory?.timestamp || data.network?.timestamp;
+          const sourceTimestamp = data.timestamp || data.threat?.timestamp || data.cpu?.timestamp || data.memory?.timestamp || data.network?.timestamp;
           const timestamp = new Date(sourceTimestamp).getTime();
           setLatest(data);
           if (Number.isNaN(timestamp)) return;
           setHistory((prev) => {
             const point = {
+              ...data,
               t: timestamp,
               cpu: data.cpu?.cpu_usage_percent,
               memory: data.memory?.used_percent,
               network: data.network,
               threat: data.threat?.threat_score,
-              ...data,
             };
             const next = [...prev.filter((item) => item.t !== timestamp), point];
             return next.sort((a, b) => a.t - b.t).slice(-historyLength);
